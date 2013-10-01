@@ -1,4 +1,4 @@
-NAME = 'puppet-tinytinyrss'
+NAME = 'velaluqa-tinytinyrss'
 TDIR = File.expand_path(File.dirname(__FILE__))
 
 require 'puppetlabs_spec_helper/rake_tasks'
