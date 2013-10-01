@@ -1,4 +1,4 @@
-name    'puppet-tinytinyrss'
+name    'velaluqa-tinytinyrss'
 version '0.0.1'
 source  'https://github.com/leoc/puppet-tinytinyrss'
 author  'Arthur Leonard Andersen'
