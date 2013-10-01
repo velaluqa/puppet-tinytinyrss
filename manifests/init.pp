@@ -20,27 +20,91 @@
 #
 #
 class tinytinyrss (
-  $tinytinyrss_path              = $tinytinyrss::params::tinytinyrss_path,
-  $tinytinyrss_user              = $tinytinyrss::params::tinytinyrss_user,
-  $tinytinyrss_title             = $tinytinyrss::params::tinytinyrss_title,
-  $tinytinyrss_db_type           = $tinytinyrss::params::tinytinyrss_db_type,
-  $tinytinyrss_db_file           = $tinytinyrss::params::tinytinyrss_db_file,
-  $tinytinyrss_db_host           = $tinytinyrss::params::tinytinyrss_db_host,
-  $tinytinyrss_db_name           = $tinytinyrss::params::tinytinyrss_db_name,
-  $tinytinyrss_db_user           = $tinytinyrss::params::tinytinyrss_db_user,
-  $tinytinyrss_db_password       = $tinytinyrss::params::tinytinyrss_db_password,
-  $tinytinyrss_db_port           = $tinytinyrss::params::tinytinyrss_db_port,
-  $tinytinyrss_db_prefix         = $tinytinyrss::params::tinytinyrss_db_prefix
-) inherits tinytinyrss::params {
-  file { $tinytinyrss_path:
-    ensure => "directory",
-    owner => $tinytinyrss_user,
+  $path              = '/srv/tinytinyrss',
+  $user              = 'www-data',
+  $db_type           = 'mysql',
+  $db_file           = 'data/sqlite/tinytinyrss.db',
+  $db_host           = 'localhost',
+  $db_name           = 'tinytinyrss',
+  $db_user           = 'tinytinyrss',
+  $db_password       = 'secret',
+  $db_port           = 3306,
+  $db_prefix         = '',
+  $archive_url       = 'https://github.com/gothfox/Tiny-Tiny-RSS/archive/1.9.tar.gz',
+  $archive_directory = 'Tiny-Tiny-RSS-1.9',
+) {
+
+  $extract_dir = "/tmp/${archive_directory}"
+
+  # exec { "tinytinyrss-download":
+  #   path => "/bin:/usr/bin",
+  #   command => "bash -c 'cd /tmp; wget -O/tmp/ttr.tar.gz ${archive_url}; mkdir -p /tmp/tinytinyrss; tar xvfz /tmp/1.9.tar.gz; cp -rf /tmp/Tiny-Tiny-RSS-1.9/* ${tinytinyrss_path}/'",
+  #   require => File[$tinytinyrss_path],
+  #   user => $tinytinyrss_user,
+  # }
+
+  exec { 'tinytinyrss-purge-old':
+    path => '/bin:/usr/bin',
+    onlyif => "test -f ${path}/ARCHIVE_URL && grep -qv '${archive_url}' ${path}/ARCHIVE_URL",
+    command => "bash -c 'rm -rf ${path}/*'",
+    user => $user,
   }
 
-  exec { "tinytinyrss-download":
-    path => "/bin:/usr/bin",
-    command => "bash -c 'cd /tmp; wget https://github.com/gothfox/Tiny-Tiny-RSS/archive/1.9.tar.gz; mkdir -p /tmp/tinytinyrss; tar xvfz /tmp/1.9.tar.gz; cp -rf /tmp/Tiny-Tiny-RSS-1.9/* ${tinytinyrss_path}/'",
-    require => File[$tinytinyrss_path],
-    user => $tinytinyrss_user,
+  file { $path:
+    ensure => 'directory',
+    owner => $user,
+    require => Exec['tinytinyrss-purge-old'],
+  }
+
+  exec { 'tinytinyrss-download':
+    path => '/bin:/usr/bin',
+    unless => "test -f ${path}/index.php",
+    creates => '/tmp/ttr.tar.gz',
+    command => "bash -c 'wget -O/tmp/ttr.tar.gz ${archive_url}'",
+    require => File[$path],
+    user => $user,
+  }
+
+  exec { 'tinytinyrss-extract':
+    path => '/bin:/usr/bin',
+    unless => "test -f ${path}/index.php",
+    creates => '/tmp/tinytinyrss',
+    command => "bash -c 'cd /tmp; tar xfz ttr.tar.gz'",
+    require => [ Exec['tinytinyrss-download'] ],
+    user => $user,
+  }
+
+  exec { 'tinytinyrss-copy':
+    path => '/bin:/usr/bin',
+    creates => "${path}/index.php",
+    command => "bash -c 'cp -rf ${extract_dir}/* ${path}/'",
+    require => Exec['tinytinyrss-extract'],
+    user => $user,
+  }
+
+  file { "${path}/ARCHIVE_URL":
+    content => $archive_url,
+    owner => $user,
+    require => Exec['tinytinyrss-copy'],
+  }
+
+  file { [ '/tmp/ttr.tar.gz', $extract_dir ]:
+    ensure => absent,
+    recurse => true,
+    force => true,
+    require => Exec['tinytinyrss-copy'],
+  }
+
+  cron::job {
+    'tinytinyrss-job':
+      minute => '*/10',
+      hour => '*',
+      date => '*',
+      month => '*',
+      weekday => '*',
+      user => $user,
+      command => "cd ${tinytinyrss_path} && /usr/bin/php update.php --feeds --quiet",
+      environment => ['PATH="/usr/bin:/bin"'],
+      require => Exec['tinytinyrss-copy'],
   }
 } # Class:: tinytinyrss
