@@ -2,11 +2,16 @@
 #
 # === Parameters
 #
-# TODO: Add parameters
+# [path] The path to extract tinytinyrss to (default: '/srv/tinytinyrss').
+# [user] The user of the webserver (default: 'www-data').
+# [archive_url] The archive to install tinytinyrss with (default: 'https://github.com/gothfox/Tiny-Tiny-RSS/archive/1.9.tar.gz').
+# [archive_directory] The directory that is extracted by the tar archive (default: 'Tiny-Tiny-RSS-1.9').
 #
 # === Examples
 #
-# TODO: Add examples
+# class { 'tinytinyrss':
+#   path  => "/srv/tinytinyrss",
+# }
 #
 # === Authors
 #
