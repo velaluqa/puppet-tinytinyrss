@@ -22,26 +22,11 @@
 class tinytinyrss (
   $path              = '/srv/tinytinyrss',
   $user              = 'www-data',
-  $db_type           = 'mysql',
-  $db_file           = 'data/sqlite/tinytinyrss.db',
-  $db_host           = 'localhost',
-  $db_name           = 'tinytinyrss',
-  $db_user           = 'tinytinyrss',
-  $db_password       = 'secret',
-  $db_port           = 3306,
-  $db_prefix         = '',
   $archive_url       = 'https://github.com/gothfox/Tiny-Tiny-RSS/archive/1.9.tar.gz',
   $archive_directory = 'Tiny-Tiny-RSS-1.9',
 ) {
 
   $extract_dir = "/tmp/${archive_directory}"
-
-  # exec { "tinytinyrss-download":
-  #   path => "/bin:/usr/bin",
-  #   command => "bash -c 'cd /tmp; wget -O/tmp/ttr.tar.gz ${archive_url}; mkdir -p /tmp/tinytinyrss; tar xvfz /tmp/1.9.tar.gz; cp -rf /tmp/Tiny-Tiny-RSS-1.9/* ${tinytinyrss_path}/'",
-  #   require => File[$tinytinyrss_path],
-  #   user => $tinytinyrss_user,
-  # }
 
   exec { 'tinytinyrss-purge-old':
     path => '/bin:/usr/bin',
