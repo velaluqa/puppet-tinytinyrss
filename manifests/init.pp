@@ -85,16 +85,11 @@ class tinytinyrss (
     require => Exec['tinytinyrss-copy'],
   }
 
-  cron::job {
-    'tinytinyrss-job':
+  cron { 'tinytinyrss-job':
+      ensure  => present,
       minute => '*/10',
-      hour => '*',
-      date => '*',
-      month => '*',
-      weekday => '*',
       user => $user,
-      command => "cd ${tinytinyrss_path} && /usr/bin/php update.php --feeds --quiet",
+      command => "cd ${path} && /usr/bin/php update.php --feeds --quiet",
       environment => ['PATH="/usr/bin:/bin"'],
-      require => Exec['tinytinyrss-copy'],
   }
 } # Class:: tinytinyrss
